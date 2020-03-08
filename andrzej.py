@@ -1,7 +1,9 @@
 # andrzej.py
 import os
-
+# import random
 import discord
+import sys
+from discord.ext import commands
 
 # from dotenv import load_dotenv
 #       wyskakuje mi error przez to, ale w sumie nie jest to kompletnie potrzebne
@@ -11,6 +13,8 @@ TOKEN = "Njg0MDYyMTMwMzg2ODk0OTcw.XmADZQ.McCDZLUUB7smn6SjvuagzjU8eZ8"   # os.get
 GUILD = "Server Andrzeja"
 
 client = discord.Client()
+
+# bot = commands.Bot(command_prefix='/')
 
 
 @client.event
@@ -49,5 +53,15 @@ async def on_message(message):
     if message.content == '99!':
         response = random.choice(brooklyn_99_quotes)
         await message.channel.send(response)
+    elif message.content == 'raise-exception':
+        raise discord.DiscordException
+
+@client.event
+async def on_error(event, *args, **kwargs):
+    with open('err.log', 'a') as f:
+        if event == 'on_message':
+            f.write(f'Unhandled message: {args[0]}; {sys.exc_info()}\n')
+        else:
+            raise
 
 client.run(TOKEN)
