@@ -25,7 +25,7 @@ async def kill(ctx):
     await bot.close()
 
 
-@bot.command(name='cov')
+@bot.command(name='cov', help='Shows how many COVID-19 cases there are now in given country')
 async def cov(ctx, country, type):
     confirmed = "D:/Projects/Matlab/covid/COVID-19/csse_covid_19_data/csse_covid_19_time_series" \
                 "/time_series_covid19_confirmed_global.csv "
@@ -43,9 +43,20 @@ async def cov(ctx, country, type):
 
     with open(localization) as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
-        for row in csv_reader:
-            if row[1] == country:
-                await ctx.send(f'There are already {row[-1]} {type} in {country}')
+        date = next(csv_reader)[-1]
+        success = True
+
+        if country == "date":
+            await ctx.send(f'Last update: {date}')
+            success = False
+        else:
+            for row in csv_reader:
+                if row[1] == country:
+                    await ctx.send(f'There are already {row[-1]} {type} in {row[0]} {country}')
+                    success = False
+
+        if success:
+            await ctx.send(f'Something went wrong')
 
 
 @bot.event
