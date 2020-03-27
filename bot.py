@@ -58,11 +58,11 @@ async def cov(ctx, *args):
             update = list(next(csv_reader).keys())[-1]
             if not date_read:
                 date = update
-            success = True
+            success = False
 
             if country == "date":
                 await ctx.send(f'Last update: {update}')
-                success = False
+                success = True
             else:
                 for row in csv_reader:
                     if country.lower() in row['Country/Region'].lower():
@@ -70,10 +70,10 @@ async def cov(ctx, *args):
                             await ctx.send(f'There were {row[date]} {case} in {row["Province/State"]} {country} in {date}')
                         else:
                             await ctx.send(f'There are already {row[date]} {case} in {row["Province/State"]} {country}')
-                        success = False
+                        success = True
 
-        if success:
-            await ctx.send(f'Something went wrong')
+            if not success:
+                await ctx.send(f'Something went wrong')
 
     else:
         await ctx.send(f'Usage:')
