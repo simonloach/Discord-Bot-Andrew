@@ -26,37 +26,60 @@ async def kill(ctx):
 
 
 @bot.command(name='cov', help='Shows how many COVID-19 cases there are now in given country')
-async def cov(ctx, country, type):
+async def cov(ctx, *args):
+
     confirmed = "D:/Projects/Matlab/covid/COVID-19/csse_covid_19_data/csse_covid_19_time_series" \
                 "/time_series_covid19_confirmed_global.csv "
     deaths = "D:/Projects/Matlab/covid/COVID-19/csse_covid_19_data/csse_covid_19_time_series" \
              "/time_series_covid19_deaths_global.csv "
     recovered = "D:/Projects/Matlab/covid/COVID-19/csse_covid_19_data/csse_covid_19_time_series" \
                 "/time_series_covid19_recovered_global.csv "
-    if type == "deaths":
-        localization = deaths
-    elif type == "recovered":
-        localization = recovered
-    else:
+
+    if len(args) > 0:
+        country = args[0]
         localization = confirmed
-        type = "cases"
-
-    with open(localization) as csv_file:
-        csv_reader = csv.reader(csv_file, delimiter=',')
-        date = next(csv_reader)[-1]
-        success = True
-
-        if country == "date":
-            await ctx.send(f'Last update: {date}')
-            success = False
+        date_read = False
+        if len(args) > 1:
+            case = args[1]
+            if case == "deaths":
+                localization = deaths
+            elif case == "recovered":
+                localization = recovered
+            else:
+                case = "cases"
+            if len(args) > 2:
+                date = args[2]
+                date_read = True
         else:
-            for row in csv_reader:
-                if row[1] == country:
-                    await ctx.send(f'There are already {row[-1]} {type} in {row[0]} {country}')
-                    success = False
+            case = "cases"
+
+        with open(localization) as csv_file:
+            csv_reader = csv.DictReader(csv_file, delimiter=',')
+            update = list(next(csv_reader).keys())[-1]
+            if not date_read:
+                date = update
+            success = True
+
+            if country == "date":
+                await ctx.send(f'Last update: {update}')
+                success = False
+            else:
+                for row in csv_reader:
+                    if country.lower() in row['Country/Region'].lower():
+                        if date_read:
+                            await ctx.send(f'There were {row[date]} {case} in {row["Province/State"]} {country} in {date}')
+                        else:
+                            await ctx.send(f'There are already {row[date]} {case} in {row["Province/State"]} {country}')
+                        success = False
 
         if success:
             await ctx.send(f'Something went wrong')
+
+    else:
+        await ctx.send(f'Usage:')
+        await ctx.send(f'date - get the last update date')
+        await ctx.send(f'<country name> - type a name of country which statistics you would like to know')
+
 
 
 @bot.event
