@@ -5,21 +5,7 @@ import discord
 from discord.ext import commands
 
 TOKEN = "Njg0MDYyMTMwMzg2ODk0OTcw.XmADZQ.McCDZLUUB7smn6SjvuagzjU8eZ8"
-GUILD = "Server Andrzeja"
-
 bot = commands.Bot(command_prefix='/')
-
-client = discord.Client()
-
-
-@client.event
-async def on_ready():
-    guild = discord.utils.get(client.guilds, name=GUILD)
-
-    print(
-        f'{client.user} is connected to the following guild:\n'
-        f'{guild.name}(id: {guild.id})'
-    )
 
 
 @bot.command(name='create-channel', help='Creates channel, takes channel name as input')
