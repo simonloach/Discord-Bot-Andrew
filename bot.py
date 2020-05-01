@@ -1,9 +1,12 @@
 # bot.py
-import csv
+
 import discord
+from discord.ext import commands
+import csv
 import logging
 import requests
-from discord.ext import commands
+import praw
+from random import randint as rand
 
 # Setting up discord loggers
 logger = logging.getLogger('discord')
@@ -21,6 +24,11 @@ with open("files/variables.csv") as var_csv:
         confirmed_localization = row['confirmed']
         deaths_localization = row['deaths']
         recovered_localization = row['recovered']
+        client_id = row['client_id']
+        client_secret = row['client_secret']
+        user_agent = row['user_agent']
+        reddit_username = row['reddit_username']
+        reddit_password = row['reddit_password']
 
 
 bot = commands.Bot(command_prefix='/')
@@ -44,9 +52,20 @@ async def kill(ctx):
     await bot.close()
 
 
+@bot.command(name='meme', help='Shows random meme from reddit')
+async def meme(ctx, *args):
+    reddit = praw.Reddit(client_id=client_id, client_secret=client_secret, user_agent=user_agent, username=reddit_username, password=reddit_password)
+    a = rand(1,10)
+    for submission in reddit.subreddit('Showerthoughts').hot(limit=10):
+        if a == 0:
+            await ctx.send(submission.title)
+            await ctx.send(submission.selftext)
+            break
+        a = a - 1
+
+
 @bot.command(name='cov', help='Shows how many COVID-19 cases there are now in given country')
 async def cov(ctx, *args):
-
     if len(args) > 0:
         country = args[0]
         localization = confirmed_localization
@@ -106,7 +125,6 @@ async def cov(ctx, *args):
         await ctx.send(f'Usage:')
         await ctx.send(f'date - get the last update date')
         await ctx.send(f'<country name> - type a name of country which statistics you would like to know')
-
 
 
 @bot.event
