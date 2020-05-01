@@ -2,9 +2,27 @@
 import csv
 import os
 import discord
+import logging
 from discord.ext import commands
 
-TOKEN = "Njg0MDYyMTMwMzg2ODk0OTcw.XmADZQ.McCDZLUUB7smn6SjvuagzjU8eZ8"
+# Setting up discord loggers
+logger = logging.getLogger('discord')
+logger.setLevel(logging.DEBUG)
+handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
+logger.addHandler(handler)
+
+
+# Reading variables from file
+with open("variables.csv") as var_csv:
+    variables = csv.DictReader(var_csv, delimiter=',')
+    for row in variables:
+        TOKEN = row['token']
+        confirmed_localization = row['confirmed']
+        deaths_localization = row['deaths']
+        recovered_localization = row['recovered']
+
+
 bot = commands.Bot(command_prefix='/')
 
 
@@ -28,23 +46,16 @@ async def kill(ctx):
 @bot.command(name='cov', help='Shows how many COVID-19 cases there are now in given country')
 async def cov(ctx, *args):
 
-    confirmed = "D:/Projects/Matlab/covid/COVID-19/csse_covid_19_data/csse_covid_19_time_series" \
-                "/time_series_covid19_confirmed_global.csv "
-    deaths = "D:/Projects/Matlab/covid/COVID-19/csse_covid_19_data/csse_covid_19_time_series" \
-             "/time_series_covid19_deaths_global.csv "
-    recovered = "D:/Projects/Matlab/covid/COVID-19/csse_covid_19_data/csse_covid_19_time_series" \
-                "/time_series_covid19_recovered_global.csv "
-
     if len(args) > 0:
         country = args[0]
-        localization = confirmed
+        localization = confirmed_localization
         date_read = False
         if len(args) > 1:
             case = args[1]
             if case == "deaths":
-                localization = deaths
+                localization = deaths_localization
             elif case == "recovered":
-                localization = recovered
+                localization = recovered_localization
             else:
                 case = "cases"
             if len(args) > 2:
