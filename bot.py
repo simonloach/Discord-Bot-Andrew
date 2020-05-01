@@ -1,20 +1,20 @@
 # bot.py
 import csv
-import os
 import discord
 import logging
+import requests
 from discord.ext import commands
 
 # Setting up discord loggers
 logger = logging.getLogger('discord')
 logger.setLevel(logging.DEBUG)
-handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+handler = logging.FileHandler(filename='files/discord.log', encoding='utf-8', mode='w')
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 logger.addHandler(handler)
 
 
 # Reading variables from file
-with open("variables.csv") as var_csv:
+with open("files/variables.csv") as var_csv:
     variables = csv.DictReader(var_csv, delimiter=',')
     for row in variables:
         TOKEN = row['token']
@@ -38,7 +38,8 @@ async def create_channel(ctx, channel_name):
         await guild.create_text_channel(channel_name)
 
 
-@bot.command(name='kys')
+@bot.command(name='kys', help='Closes bot, for debug purposes only')
+@commands.has_role('admin')
 async def kill(ctx):
     await bot.close()
 
@@ -73,6 +74,21 @@ async def cov(ctx, *args):
 
             if country == "date":
                 await ctx.send(f'Last update: {update}')
+                success = True
+            if country == "update":
+                c_req = requests.get('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
+                d_req = requests.get('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv')
+                r_req = requests.get('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv')
+                c_file = open(confirmed_localization, "w")
+                d_file = open(deaths_localization, "w")
+                r_file = open(recovered_localization, "w")
+                c_file.write(c_req.text)
+                d_file.write(d_req.text)
+                r_file.write(r_req.text)
+                c_file.close()
+                d_file.close()
+                r_file.close()
+                await ctx.send(f'Update completed')
                 success = True
             else:
                 for row in csv_reader:
