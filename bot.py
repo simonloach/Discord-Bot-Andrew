@@ -8,6 +8,7 @@ import requests
 import praw
 import sys
 import random
+from datetime import date
 
 stderr = sys.stderr
 sys.stderr = open('files/discord.log', 'w')
@@ -36,6 +37,35 @@ with open("files/variables.csv") as var_csv:
 
 
 bot = commands.Bot(command_prefix='/')
+
+
+def update_covid_database():
+    c_req = requests.get(
+        'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
+    d_req = requests.get(
+        'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv')
+    r_req = requests.get(
+        'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv')
+    c_file = open(confirmed_localization, "w")
+    d_file = open(deaths_localization, "w")
+    r_file = open(recovered_localization, "w")
+    c_file.write(c_req.text)
+    d_file.write(d_req.text)
+    r_file.write(r_req.text)
+    c_file.close()
+    d_file.close()
+    r_file.close()
+
+
+@bot.event
+async def on_ready():
+    with open(confirmed_localization) as csv_file:
+        csv_reader = csv.DictReader(csv_file, delimiter=',')
+        update = list(next(csv_reader).keys())[-1].split('/')
+        today = date.today().strftime("%m/%d/%Y").split('/')
+        if not ((int(today[1])-int(update[1])) <= 1 and int(update[0]) == int(today[0])):
+            update_covid_database()
+        close(csv_file)
 
 
 @bot.command(name='create-channel', help='Creates channel, takes channel name as input')
@@ -67,10 +97,8 @@ async def meme(ctx, *args):
 
     try:
         submission = reddit.subreddit(subred).random()
-    except prawcore.exceptions.NotFound:
-        await ctx.send('Subreddit not found')
     except:
-        await ctx.send('Something went wrong')
+        await ctx.send('Subreddit not found')
 
     await ctx.send(submission.title)
     if submission.is_self:
@@ -111,18 +139,7 @@ async def cov(ctx, *args):
                 await ctx.send(f'Last update: {update}')
                 success = True
             if country == "update":
-                c_req = requests.get('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
-                d_req = requests.get('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv')
-                r_req = requests.get('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv')
-                c_file = open(confirmed_localization, "w")
-                d_file = open(deaths_localization, "w")
-                r_file = open(recovered_localization, "w")
-                c_file.write(c_req.text)
-                d_file.write(d_req.text)
-                r_file.write(r_req.text)
-                c_file.close()
-                d_file.close()
-                r_file.close()
+                update_covid_database()
                 await ctx.send(f'Update completed')
                 success = True
             else:
