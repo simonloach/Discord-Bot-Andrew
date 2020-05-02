@@ -111,35 +111,30 @@ async def _start(ctx, *args):
         msg = await ctx.send(text)
         await ctx.send('Id of the poll: ' + str(msg.id))
 
-@poll.command(name='end', help='Type a poll id to end it')
-async def _end(ctx, id: int):
+@poll.command(name='result', help='Type a poll id to end it')
+async def _result(ctx, id: int):
     try:
         msg = await ctx.fetch_message(id)
         reactions = msg.reactions
         # numbers = {':one:': 0, ':two:': 0, ':three:': 0, ':four:': 0, ':five:': 0, ':six:': 0, ':seven:': 0, ':eight:': 0, ':nine:': 0}
         numbers = dict()
         for react in reactions:
-            await ctx.send
-            numbers[str(react)] = react.count
-        winner = ':one:'
+            numbers[react] = react.count
+            winner = react
         ties = list()
         for num in numbers:
             if numbers[num] == numbers[winner]:
-                ties.append(num)
+                ties.append(str(num))
             elif numbers[num] > numbers[winner]:
                 winner = num
                 ties.clear()
-        if ties:
+                ties.append(str(num))
+        if len(ties) > 1:
             text = "There was a tie betwen: "
-            if winner == ':one:':
-                for t in ties:
-                    text += t + ' '
-            else:
-                text += winner + ' '
-                for t in ties:
-                    text += t + ' '
+            for t in ties:
+                text += t + ' '
         else:
-            text = "And the winner is: " + winner
+            text = "And the winner is: " + str(winner)
         await ctx.send(text)
     except:
         await ctx.send('Poll not found')
