@@ -8,6 +8,7 @@ import requests
 import praw
 import sys
 import random
+import traceback
 from datetime import date
 
 stderr = sys.stderr
@@ -85,6 +86,38 @@ async def create_channel(ctx, channel_name):
 async def kill(ctx):
     await bot.close()
 
+
+@bot.group()
+async def poll(ctx):
+    if ctx.invoked_subcommand is None:
+        await ctx.send("You can start or stop a poll")
+
+@poll.command(name='start', help='creates a simple pool')
+async def _start(ctx, *args):
+    numbers = [':one:', ':two:', ':three:', ':four:', ':five:', ':six:', ':seven:', ':eight:', ':nine:', ]
+
+    if len(args) < 3:
+        await ctx.send("You have to specify a title, and at least two option")
+    elif len(args) > 10:
+        await ctx.send("There are up to 9 options supported")
+    else:
+        text = '>>> ' + args[0] + '\n'
+        n = 1
+        for num in numbers:
+            if n == len(args):
+                break
+            text += num + ' ' + args[n] + '\n'
+            n += 1
+        msg = await ctx.send(text)
+    await ctx.send('Id of the poll: ' + msg.id)
+
+@poll.command(name='end', help='Type a poll id to end it')
+async def _end(ctx, id: int):
+    try:
+        msg = await ctx.fetch_message(id)
+        await ctx.send(msg.id)
+    except:
+        await ctx.send('Poll not found')
 
 @bot.command(name='meme', help='Shows random meme from reddit')
 async def meme(ctx, *args):
@@ -164,5 +197,6 @@ async def cov(ctx, *args):
 async def on_command_error(ctx, error):
     if isinstance(error, commands.errors.CheckFailure):
         await ctx.send('You do not have the correct role for this command.')
+    traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 
 bot.run(TOKEN)
