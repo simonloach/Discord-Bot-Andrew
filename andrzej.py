@@ -1,6 +1,6 @@
 # andrzej.py
 import os
-# import random
+import random
 import discord
 import sys
 from discord.ext import commands

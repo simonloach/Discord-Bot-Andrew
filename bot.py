@@ -6,7 +6,11 @@ import csv
 import logging
 import requests
 import praw
-from random import randint as rand
+import sys
+import random
+
+stderr = sys.stderr
+sys.stderr = open('files/discord.log', 'w')
 
 # Setting up discord loggers
 logger = logging.getLogger('discord')
@@ -54,14 +58,26 @@ async def kill(ctx):
 
 @bot.command(name='meme', help='Shows random meme from reddit')
 async def meme(ctx, *args):
+    if len(args) > 0:
+        subred = args[0]
+    else:
+        subred = random.choice(['dankmemes', 'memes', 'funny'])
+
     reddit = praw.Reddit(client_id=client_id, client_secret=client_secret, user_agent=user_agent, username=reddit_username, password=reddit_password)
-    a = rand(1,10)
-    for submission in reddit.subreddit('Showerthoughts').hot(limit=10):
-        if a == 0:
-            await ctx.send(submission.title)
-            await ctx.send(submission.selftext)
-            break
-        a = a - 1
+
+    try:
+        submission = reddit.subreddit(subred).random()
+    except prawcore.exceptions.NotFound:
+        await ctx.send('Subreddit not found')
+    except:
+        await ctx.send('Something went wrong')
+
+    await ctx.send(submission.title)
+    if submission.is_self:
+        await ctx.send(submission.selftext)
+    else:
+        await ctx.send(submission.url)
+    # await ctx.send('https://i.redd.it/dmggzptio3w41.jpg')
 
 
 @bot.command(name='cov', help='Shows how many COVID-19 cases there are now in given country')
