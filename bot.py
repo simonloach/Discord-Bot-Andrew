@@ -90,9 +90,9 @@ async def kill(ctx):
 @bot.group()
 async def poll(ctx):
     if ctx.invoked_subcommand is None:
-        await ctx.send("You can start or stop a poll")
+        await ctx.send("You can use:\n ```/pool start '<question>' <1st option> <2nd option> ...\n /pool end <pool ID>```")
 
-@poll.command(name='start', help='creates a simple pool')
+@poll.command(name='start', help='Creates a simple pool, for more info say "/pool"')
 async def _start(ctx, *args):
     numbers = [':one:', ':two:', ':three:', ':four:', ':five:', ':six:', ':seven:', ':eight:', ':nine:']
 
