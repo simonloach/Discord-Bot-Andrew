@@ -217,6 +217,21 @@ async def cov(ctx, *args):
         await ctx.send(f'date - get the last update date')
         await ctx.send(f'<country name> - type a name of country which statistics you would like to know')
 
+@client.event
+async def on_message(message):
+    if message.author == client.user:
+        return
+    else:
+        with open("files/levels.csv", "w") as f:
+            f.write("dupa")
+    if message.content == '99!':
+        response = random.choice(brooklyn_99_quotes)
+        await message.channel.send(response)
+    elif message.content == 'raise-exception':
+        raise discord.DiscordException
+
+
+
 
 @bot.event
 async def on_command_error(ctx, error):
