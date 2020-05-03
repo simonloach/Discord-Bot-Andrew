@@ -1,3 +1,10 @@
 *.log
 *.csv
 *.json
+/venv/
+/.env
+/.gitignore
+/covread.py
+/andrzej.py
+/test.py
+/.idea

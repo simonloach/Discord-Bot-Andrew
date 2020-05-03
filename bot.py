@@ -235,6 +235,8 @@ async def cov(ctx, *args):
 @bot.event
 async def on_message(message):
     if message.author == bot.user:
+        return
+    else:
         # Tries to create a file data.json
         try:
             with open("data.json", 'x') as f:
@@ -258,7 +260,6 @@ async def on_message(message):
                 for user in data['people']:
                     print(user['userID'])
                     print(type(user['userID']))
-    else:
         for user in data['people']:
             #Checks if author Id matches to any user in the list
             if user['userID'] == message.member.id:
