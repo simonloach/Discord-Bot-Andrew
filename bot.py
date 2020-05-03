@@ -22,6 +22,41 @@ handler = logging.FileHandler(filename='files/discord.log', encoding='utf-8', mo
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 logger.addHandler(handler)
 
+
+def open_json():
+    try:
+        with open("data.json", 'r') as f:
+                data = json.load(f)
+                print("Opened json file")
+                print(type(data))
+                print(type(data['people']))
+                print(data['people'])
+                for user in data['people']:
+                    print(user['userID'])
+                    print(type(user['userID']))
+        return data       
+    except FileNotFoundError:
+        with open("data.json", 'x') as f:
+            data = {}
+            data['people'] = []
+            data['people'].append({
+                'userID': 0,
+                'xp': 0,
+                'level' : 1
+            })
+            json.dump(data, f)
+            print("Created json file")
+            open_json()
+
+def write_json(data):
+    try:
+        print("Trying to save to file...")
+        with open("data.json", 'w') as f:
+            print(data)
+            json.dump(data, f)
+            print("Saved")
+    except:
+        print("Couldnt write to JSON file")
 # Reading variables from file
 with open("files/variables.csv", 'r') as var_csv:
     variables = csv.DictReader(var_csv, delimiter=',')
@@ -239,44 +274,13 @@ async def on_message(message):
     if message.author == bot.user:
         return
     else:
-        # Tries to create a file data.json
-        try:
-            with open("data.json", 'x') as f:
-                data = {}
-                data['people'] = []
-                data['people'].append({
-                    'userID': 0,
-                    'xp': 0,
-                    'level' : 1
-                })
-                json.dump(data, f)
-                print("Created json file")
-        # If file exists, exception is thrown and it just gets opened
-        except:
-            pass
-        try:
-            with open("data.json", 'r') as f:
-                data = json.load(f)
-                print("Opened json file")
-                print(type(data))
-                print(type(data['people']))
-                print(data['people'])
-                for user in data['people']:
-                    print(user['userID'])
-                    print(type(user['userID']))
-        except:
-            pass
+        data=open_json()
         for user in data['people']:
-            #Checks if author Id matches to any user in the list
             if user['userID'] == message.author.id:
-                #If so it increases the value of exp by len of message
                 user['xp'] += len(message.content)
-                #The user was on the list so it is not unique
                 unique = False
             else:
-                #The user was not on the list so it is unique
                 unique = True
-        #If user was unique then we create a new entry on the list and also give him exp for the message
         if unique:
             print("New user entry")
             data['people'].append({
@@ -284,17 +288,7 @@ async def on_message(message):
                 'xp': len(message.content),
                 'level' : 1
             })
-        #Tries to save data changes to our json file.
-        try:
-            print("Trying to save to file...")
-            with open("data.json", 'w') as f:
-                print(data)
-                json.dump(data, f)
-                print("Saved")
-        except:
-            print("Couldnt write to JSON file")
-
-
+        write_json(data)
 
 
 
