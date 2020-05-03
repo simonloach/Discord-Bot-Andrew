@@ -235,7 +235,6 @@ async def cov(ctx, *args):
 @bot.event
 async def on_message(message):
     if message.author == bot.user:
-        return
         # Tries to create a file data.json
         try:
             with open("data.json", 'x') as f:
