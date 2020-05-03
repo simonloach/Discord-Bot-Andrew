@@ -1,6 +1,7 @@
 *.log
 *.csv
 *.json
+*.txt
 /venv/
 /.env
 /.gitignore

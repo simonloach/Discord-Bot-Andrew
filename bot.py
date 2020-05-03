@@ -15,7 +15,7 @@ import json
 stderr = sys.stderr
 sys.stderr = open('files/discord.log', 'w')
 LEVELS = [int(math.pow(x, 1.5)*20) for x in range(100)]
-
+BANNED_WORDS = open('files/swearWords.txt','r').read().replace(" ", "").split(",")
 # Setting up discord loggers
 logger = logging.getLogger('discord')
 logger.setLevel(logging.DEBUG)
@@ -27,15 +27,9 @@ logger.addHandler(handler)
 def open_json():
     try:
         with open("data.json", 'r') as f:
-                data = json.load(f)
-                print("Opened json file")
-                print(type(data))
-                print(type(data['people']))
-                print(data['people'])
-                for user in data['people']:
-                    print(user['userID'])
-                    print(type(user['userID']))
-        return data       
+            data = json.load(f)
+            print("Opened json file")
+            return data       
     except FileNotFoundError:
         with open("data.json", 'x') as f:
             data = {}
@@ -59,7 +53,24 @@ def write_json(data):
     except:
         print("Couldnt write to JSON file")
 
+def containsBannedWords(message):
+    print("Looking for curse words ( ͡° ͜ʖ ͡°)")
+    if " " in message.content:
+        print("No spaces found ( ͡° ͜ʖ ͡°)")
+        for word in BANNED_WORDS:
+            if word==message.content:
+                return True
+    else:
+        for el in message.content.split(" "):
+            print("Breaking into single words ( ͡° ͜ʖ ͡°)")
+            for word in BANNED_WORDS:
+                if el==word:
+                    print("Found banned word ( ͡° ͜ʖ ͡°)")
+                    return True
+    return False
 
+
+data=open_json()
 
 # Reading variables from file
 with open("files/variables.csv", 'r') as var_csv:
@@ -275,35 +286,43 @@ async def cov(ctx, *args):
 async def on_message(message):
     print("MESSAGE AUTHOR: ",  message.author)
     print("MESSAGE AUTHOR ID: ", message.author.id)
+    print("MESSAGE CONTENT: ", message.content)
     if message.author == bot.user:
         return
     else:
-        data=open_json()
-        for user in data['people']:
-            if user['userID'] == message.author.id:
-                user['xp'] += len(message.content.split(" "))
-                unique = False
-                i=0
-                pre = user['level']
-                while user['xp'] > LEVELS[i]:
-                    print(LEVELS[i])
-                    i+=1
-                user['level'] = i
-                if pre != user['level']:
-                    await message.channel.send(
-                        f"Congratulations {message.author.mention}, you have just hit level {user['level']}!"
-                    )
-                    write_json(data)
-            else:
-                unique = True
-        if unique:
-            print("New user entry")
-            data['people'].append({
-                'userID': message.author.id,
-                'xp': len(message.content),
-                'level' : 1
-            })
-            write_json(data)
+        if not containsBannedWords(message):
+            print("not deleting message")
+            for user in data['people']:
+                if user['userID'] == message.author.id:
+                    user['xp'] += len(message.content.split(" "))
+                    unique = False
+                    i=0
+                    pre = user['level']
+                    while user['xp'] > LEVELS[i]:
+                        i+=1
+                    user['level'] = i
+                    if pre != user['level']:
+                        print("LEVELUP")
+                        await message.channel.send(
+                            f"Congratulations {message.author.mention}, you have just hit level {user['level']}!"
+                        )
+                        write_json(data)
+                else:
+                    unique = True
+            if unique:
+                print("New user entry")
+                data['people'].append({
+                    'userID': message.author.id,
+                    'xp': len(message.content),
+                    'level' : 1
+                })
+                write_json(data)
+        else:
+            print("Deleting message")
+            await message.delete()
+            print("Worked?")
+            await message.channel.send("Watch your mouth son!") #cursingPhrases.random()) #TODO cursingPhrases
+
 
 @bot.event
 async def on_command_error(ctx, error):
