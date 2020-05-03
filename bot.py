@@ -99,12 +99,7 @@ async def poll(ctx):
     if ctx.invoked_subcommand is None:
         await ctx.send("You can use:\n ```/pool start '<question>' <1st option> <2nd option> ...\n /pool result <pool ID>```")
 
-<<<<<<< HEAD
 @poll.command(name='start', help='Creates a simple pool, for more info say "/pool"')
-=======
-
-@poll.command(name='start', help='creates a simple pool')
->>>>>>> 30c9960fd938d05ee1802cfd6459fd112356f36e
 async def _start(ctx, *args):
     numbers = ["1\u20e3", "2\u20e3", "3\u20e3", "4\u20e3", "5\u20e3", "6\u20e3", "7\u20e3", "8\u20e3", "9\u20e3", ]
 
