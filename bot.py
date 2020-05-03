@@ -178,6 +178,7 @@ async def _result(ctx, poll_id: int):
         # numbers = {':one:': 0, ':two:': 0, ':three:': 0, ':four:': 0, ':five:': 0, ':six:': 0, ':seven:': 0,
         # ':eight:': 0, ':nine:': 0}
         numbers = dict()
+        winner = discord.reaction
         for react in reactions:
             numbers[react] = react.count
             winner = react
@@ -207,8 +208,11 @@ async def meme(ctx, *args):
     else:
         subreddit = random.choice(['dankmemes', 'memes', 'funny'])
 
-    reddit = praw.Reddit(client_id=client_id, client_secret=client_secret, user_agent=user_agent,
-                         username=reddit_username, password=reddit_password)
+    reddit = praw.Reddit(client_id=client_id,
+                         client_secret=client_secret,
+                         user_agent=user_agent,
+                         username=reddit_username,
+                         password=reddit_password)
 
     try:
         submission = reddit.subreddit(subreddit).random()
