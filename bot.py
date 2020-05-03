@@ -232,17 +232,59 @@ async def cov(ctx, *args):
         await ctx.send(f'<country name> - type a name of country which statistics you would like to know')
 
 @client.event
+@client.event
 async def on_message(message):
     if message.author == client.user:
         return
+        # Tries to create a file data.json
+        try:
+            with open("data.json", 'x') as f:
+                data = {}
+                data['people'] = []
+                data['people'].append({
+                    'userID': 0,
+                    'xp': 0,
+                    'level' : 1
+                })
+                json.dump(data, f)
+                print("Created json file")
+        # If file exists, exception is thrown and it just gets opened
+        except:
+            with open("data.json", 'r') as f:
+                data = json.load(f)
+                print("Opened json file")
+                print(type(data))
+                print(type(data['people']))
+                print(data['people'])
+                for user in data['people']:
+                    print(user['userID'])
+                    print(type(user['userID']))
     else:
-        with open("files/levels.csv", "w") as f:
-            f.write("dupa")
-    if message.content == '99!':
-        response = random.choice(brooklyn_99_quotes)
-        await message.channel.send(response)
-    elif message.content == 'raise-exception':
-        raise discord.DiscordException
+        for user in data['people']:
+            #Checks if author Id matches to any user in the list
+            if user['userID'] == message.member.id:
+                #If so it increases the value of exp by len of message
+                user['xp'] += len(message.content)
+                #The user was on the list so it is not unique
+                unique = False
+            else:
+                #The user was not on the list so it is unique
+                unique = True
+        #If user was unique then we create a new entry on the list and also give him exp for the message
+        if unique:
+            data['people'].append{
+                'userID': message.author.id,
+                'xp': len(message.content),
+                'level' : 1
+            }
+        #Tries to save data changes to our json file.
+        try:
+            with open("data.json", 'w') as f:
+                print(data)
+                json.dump(data, f)
+        except:
+            print("Couldnt write to JSON file")
+
 
 
 
