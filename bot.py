@@ -21,9 +21,8 @@ handler = logging.FileHandler(filename='files/discord.log', encoding='utf-8', mo
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 logger.addHandler(handler)
 
-
 # Reading variables from file
-with open("files/variables.csv") as var_csv:
+with open("files/variables.csv", 'r') as var_csv:
     variables = csv.DictReader(var_csv, delimiter=',')
     for row in variables:
         TOKEN = row['token']
@@ -36,17 +35,19 @@ with open("files/variables.csv") as var_csv:
         reddit_username = row['reddit_username']
         reddit_password = row['reddit_password']
 
-
 bot = commands.Bot(command_prefix='/')
 
 
 def update_covid_database():
     c_req = requests.get(
-        'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
+        'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data'
+        '/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
     d_req = requests.get(
-        'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv')
+        'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data'
+        '/csse_covid_19_time_series/time_series_covid19_deaths_global.csv')
     r_req = requests.get(
-        'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv')
+        'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data'
+        '/csse_covid_19_time_series/time_series_covid19_recovered_global.csv')
     c_file = open(confirmed_localization, "w")
     d_file = open(deaths_localization, "w")
     r_file = open(recovered_localization, "w")
@@ -64,9 +65,15 @@ async def on_ready():
         csv_reader = csv.DictReader(csv_file, delimiter=',')
         update = list(next(csv_reader).keys())[-1].split('/')
         today = date.today().strftime("%m/%d/%Y").split('/')
-        if not ((int(today[1])-int(update[1])) <= 1 and int(update[0]) == int(today[0])):
+        if not ((int(today[1]) - int(update[1])) <= 1 and int(update[0]) == int(today[0])):
             update_covid_database()
-        close(csv_file)
+        csv_file.close()
+
+
+@bot.event
+async def on_member_join(member):
+    await member.create_dm()
+    await member.dm_channel.send(f'Siemano kolano {member.name}')
 
 
 @bot.command(name='create-channel', help='Creates channel, takes channel name as input')
@@ -92,9 +99,10 @@ async def poll(ctx):
     if ctx.invoked_subcommand is None:
         await ctx.send("You can start or stop a poll")
 
+
 @poll.command(name='start', help='creates a simple pool')
 async def _start(ctx, *args):
-    numbers = [':one:', ':two:', ':three:', ':four:', ':five:', ':six:', ':seven:', ':eight:', ':nine:']
+    numbers = ["1\u20e3", "2\u20e3", "3\u20e3", "4\u20e3", "5\u20e3", "6\u20e3", "7\u20e3", "8\u20e3", "9\u20e3", ]
 
     if len(args) < 3:
         await ctx.send("You have to specify a title, and at least two option")
@@ -110,13 +118,21 @@ async def _start(ctx, *args):
             n += 1
         msg = await ctx.send(text)
         await ctx.send('Id of the poll: ' + str(msg.id))
+        n = 1
+        for num in numbers:
+            if n == len(args):
+                break
+            await msg.add_reaction(num)
+            n += 1
+
 
 @poll.command(name='result', help='Type a poll id to end it')
-async def _result(ctx, id: int):
+async def _result(ctx, poll_id: int):
     try:
-        msg = await ctx.fetch_message(id)
+        msg = await ctx.fetch_message(poll_id)
         reactions = msg.reactions
-        # numbers = {':one:': 0, ':two:': 0, ':three:': 0, ':four:': 0, ':five:': 0, ':six:': 0, ':seven:': 0, ':eight:': 0, ':nine:': 0}
+        # numbers = {':one:': 0, ':two:': 0, ':three:': 0, ':four:': 0, ':five:': 0, ':six:': 0, ':seven:': 0,
+        # ':eight:': 0, ':nine:': 0}
         numbers = dict()
         for react in reactions:
             numbers[react] = react.count
@@ -130,7 +146,7 @@ async def _result(ctx, id: int):
                 ties.clear()
                 ties.append(str(num))
         if len(ties) > 1:
-            text = "There was a tie betwen: "
+            text = "There was a tie between: "
             for t in ties:
                 text += t + ' '
         else:
@@ -139,25 +155,27 @@ async def _result(ctx, id: int):
     except:
         await ctx.send('Poll not found')
 
+
 @bot.command(name='meme', help='Shows random meme from reddit')
 async def meme(ctx, *args):
     if len(args) > 0:
-        subred = args[0]
+        subreddit = args[0]
     else:
-        subred = random.choice(['dankmemes', 'memes', 'funny'])
+        subreddit = random.choice(['dankmemes', 'memes', 'funny'])
 
-    reddit = praw.Reddit(client_id=client_id, client_secret=client_secret, user_agent=user_agent, username=reddit_username, password=reddit_password)
+    reddit = praw.Reddit(client_id=client_id, client_secret=client_secret, user_agent=user_agent,
+                         username=reddit_username, password=reddit_password)
 
     try:
-        submission = reddit.subreddit(subred).random()
+        submission = reddit.subreddit(subreddit).random()
+        await ctx.send(submission.title)
+        if submission.is_self:
+            await ctx.send(submission.selftext)
+        else:
+            await ctx.send(submission.url)
     except:
         await ctx.send('Subreddit not found')
 
-    await ctx.send(submission.title)
-    if submission.is_self:
-        await ctx.send(submission.selftext)
-    else:
-        await ctx.send(submission.url)
     # await ctx.send('https://i.redd.it/dmggzptio3w41.jpg')
 
 
@@ -176,7 +194,7 @@ async def cov(ctx, *args):
             else:
                 case = "cases"
             if len(args) > 2:
-                date = args[2]
+                date_ = args[2]
                 date_read = True
         else:
             case = "cases"
@@ -185,7 +203,7 @@ async def cov(ctx, *args):
             csv_reader = csv.DictReader(csv_file, delimiter=',')
             update = list(next(csv_reader).keys())[-1]
             if not date_read:
-                date = update
+                date_ = update
             success = False
 
             if country == "date":
@@ -196,12 +214,14 @@ async def cov(ctx, *args):
                 await ctx.send(f'Update completed')
                 success = True
             else:
-                for row in csv_reader:
-                    if country.lower() in row['Country/Region'].lower():
+                for row_ in csv_reader:
+                    if country.lower() in row_['Country/Region'].lower():
                         if date_read:
-                            await ctx.send(f'There were {row[date]} {case} in {row["Province/State"]} {country} in {date}')
+                            await ctx.send(
+                                f'There were {row_[date_]} {case} in {row_["Province/State"]} {country} in {date_}')
                         else:
-                            await ctx.send(f'There are already {row[date]} {case} in {row["Province/State"]} {country}')
+                            await ctx.send(
+                                f'There are already {row_[date_]} {case} in {row_["Province/State"]} {country}')
                         success = True
 
             if not success:
@@ -218,5 +238,6 @@ async def on_command_error(ctx, error):
     if isinstance(error, commands.errors.CheckFailure):
         await ctx.send('You do not have the correct role for this command.')
     traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
+
 
 bot.run(TOKEN)
