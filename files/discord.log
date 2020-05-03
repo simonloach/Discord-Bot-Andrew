@@ -1,5 +1,0 @@
-Traceback (most recent call last):
-  File "c:/Repozytoria/JpwpProject/bot.py", line 220, in <module>
-    @client.event
-NameError: name 'client' is not defined
-ccessfully been registered as an event
