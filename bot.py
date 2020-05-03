@@ -234,6 +234,8 @@ async def cov(ctx, *args):
 
 @bot.event
 async def on_message(message):
+    print("MESSAGE AUTHOR: ",  message.author)
+    print("MESSAGE AUTHOR ID: ", message.author.id)
     if message.author == bot.user:
         return
     else:
@@ -251,6 +253,8 @@ async def on_message(message):
                 print("Created json file")
         # If file exists, exception is thrown and it just gets opened
         except:
+            pass
+        try:
             with open("data.json", 'r') as f:
                 data = json.load(f)
                 print("Opened json file")
@@ -260,6 +264,8 @@ async def on_message(message):
                 for user in data['people']:
                     print(user['userID'])
                     print(type(user['userID']))
+        except:
+            pass
         for user in data['people']:
             #Checks if author Id matches to any user in the list
             if user['userID'] == message.member.id:
