@@ -232,9 +232,9 @@ async def cov(ctx, *args):
         await ctx.send(f'date - get the last update date')
         await ctx.send(f'<country name> - type a name of country which statistics you would like to know')
 
-@client.event
+@bot.event
 async def on_message(message):
-    if message.author == client.user:
+    if message.author == bot.user:
         return
         # Tries to create a file data.json
         try:
