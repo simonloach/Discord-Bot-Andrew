@@ -272,11 +272,11 @@ async def on_message(message):
                 unique = True
         #If user was unique then we create a new entry on the list and also give him exp for the message
         if unique:
-            data['people'].append{
+            data['people'].append({
                 'userID': message.author.id,
                 'xp': len(message.content),
                 'level' : 1
-            }
+            })
         #Tries to save data changes to our json file.
         try:
             with open("data.json", 'w') as f:
