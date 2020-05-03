@@ -15,7 +15,16 @@ import json
 stderr = sys.stderr
 sys.stderr = open('files/discord.log', 'w')
 LEVELS = [int(math.pow(x, 1.5)*20) for x in range(100)]
-BANNED_WORDS = open('files/swearWords.txt','r').read().replace(" ", "").split(",")
+BANNED_WORDS = (open('files/swearWords.txt','r').read().replace(" ", "").split(",") + open('files/swearWordsPL.txt','r').read().replace("'","").replace("\n","").replace(" ","").split(","))
+cursingPhrases=[
+    "Watch your mouth son!",
+    "Yo yooo chill out!",
+    "How about we take our time and try to rephrase that?",
+    "Bad words, you use - rephrase you should ~ Yoda Master",
+    "You mad bruh?",
+    "I mean, that ain't goin' through brother..."
+]
+
 # Setting up discord loggers
 logger = logging.getLogger('discord')
 logger.setLevel(logging.DEBUG)
@@ -55,7 +64,7 @@ def write_json(data):
 
 def containsBannedWords(message):
     print("Looking for curse words ( ͡° ͜ʖ ͡°)")
-    if " " in message.content:
+    if not(" " in message.content):
         print("No spaces found ( ͡° ͜ʖ ͡°)")
         for word in BANNED_WORDS:
             if word==message.content:
@@ -282,6 +291,11 @@ async def cov(ctx, *args):
         await ctx.send(f'date - get the last update date')
         await ctx.send(f'<country name> - type a name of country which statistics you would like to know')
 
+@bot.command(name='leaderboard', help='Shows the most active users.')
+async def leaderboard(ctx, *args):
+    for user in data['people']:
+        print(user)
+
 @bot.event
 async def on_message(message):
     print("MESSAGE AUTHOR: ",  message.author)
@@ -321,9 +335,7 @@ async def on_message(message):
             print("Deleting message")
             await message.delete()
             print("Worked?")
-            await message.channel.send("Watch your mouth son!") #cursingPhrases.random()) #TODO cursingPhrases
-
-
+            await message.channel.send(random.choice(cursingPhrases))
 @bot.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.errors.CheckFailure):
