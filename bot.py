@@ -268,7 +268,7 @@ async def on_message(message):
             pass
         for user in data['people']:
             #Checks if author Id matches to any user in the list
-            if user['userID'] == message.member.id:
+            if user['userID'] == message.author.id:
                 #If so it increases the value of exp by len of message
                 user['xp'] += len(message.content)
                 #The user was on the list so it is not unique
@@ -278,6 +278,7 @@ async def on_message(message):
                 unique = True
         #If user was unique then we create a new entry on the list and also give him exp for the message
         if unique:
+            print("New user entry")
             data['people'].append({
                 'userID': message.author.id,
                 'xp': len(message.content),
@@ -285,9 +286,11 @@ async def on_message(message):
             })
         #Tries to save data changes to our json file.
         try:
+            print("Trying to save to file...")
             with open("data.json", 'w') as f:
                 print(data)
                 json.dump(data, f)
+                print("Saved")
         except:
             print("Couldnt write to JSON file")
 
