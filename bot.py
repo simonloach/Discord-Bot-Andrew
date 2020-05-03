@@ -15,7 +15,7 @@ import json
 stderr = sys.stderr
 sys.stderr = open('files/discord.log', 'w')
 LEVELS = [int(math.pow(x, 1.5)*20) for x in range(100)]
-
+print(LEVELS)
 # Setting up discord loggers
 logger = logging.getLogger('discord')
 logger.setLevel(logging.DEBUG)
@@ -24,18 +24,12 @@ handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(me
 logger.addHandler(handler)
 
     
-def open_json():
+async def open_json():
     try:
         with open("data.json", 'r') as f:
                 data = json.load(f)
                 print("Opened json file")
-                print(type(data))
-                print(type(data['people']))
-                print(data['people'])
-                for user in data['people']:
-                    print(user['userID'])
-                    print(type(user['userID']))
-        return data       
+        return data
     except FileNotFoundError:
         with open("data.json", 'x') as f:
             data = {}
@@ -49,7 +43,7 @@ def open_json():
             print("Created json file")
             open_json()
 
-def write_json(data):
+async def write_json(data):
     try:
         print("Trying to save to file...")
         with open("data.json", 'w') as f:
@@ -59,7 +53,7 @@ def write_json(data):
     except:
         print("Couldnt write to JSON file")
 
-
+data = open_json()
 
 # Reading variables from file
 with open("files/variables.csv", 'r') as var_csv:
@@ -278,20 +272,24 @@ async def on_message(message):
     if message.author == bot.user:
         return
     else:
-        data=open_json()
+        data = await open_json()
         for user in data['people']:
+            print(data['people'])
+            print(user)
             if user['userID'] == message.author.id:
+                print("Found match on user list...")
                 user['xp'] += len(message.content.split(" "))
+                print("Increased xp")
                 unique = False
-                i=0
-                pre = user['level']
-                while user['xp'] > LEVELS[i]:
-                    print(LEVELS[i])
-                    i+=1
-                user['level'] = i
-                if pre != user['level']:
-                    print("WYSLIJ WIADOMOSC")
-                    await message.channel.send(f"Congratulations {message.author.mention}, you have just hit level {user['level']}! Keep on postin' dem messages.")
+                # i=0
+                # pre = user['level']
+                # while user['xp'] > LEVELS[i]:
+                #     print(LEVELS[i])
+                #     i+=1
+                # user['level'] = i
+                # if pre != user['level']:
+                #     print("WYSLIJ WIADOMOSC")
+                #     await message.channel.send(f"Congratulations @{message.author.mention}, you have just hit level {user['level']}! Keep on postin' dem messages.")
             else:
                 unique = True
         if unique:
@@ -301,7 +299,7 @@ async def on_message(message):
                 'xp': len(message.content),
                 'level' : 1
             })
-        write_json(data)
+        await write_json(data)
 
 
 
