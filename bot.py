@@ -10,6 +10,7 @@ import sys
 import random
 import traceback
 from datetime import date
+import json
 
 stderr = sys.stderr
 sys.stderr = open('files/discord.log', 'w')
@@ -231,7 +232,6 @@ async def cov(ctx, *args):
         await ctx.send(f'date - get the last update date')
         await ctx.send(f'<country name> - type a name of country which statistics you would like to know')
 
-@client.event
 @client.event
 async def on_message(message):
     if message.author == client.user:
