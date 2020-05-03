@@ -9,6 +9,7 @@ import praw
 import sys
 import random
 import traceback
+import youtube_dl
 from datetime import date
 
 stderr = sys.stderr
@@ -35,6 +36,30 @@ with open("files/variables.csv", 'r') as var_csv:
         reddit_username = row['reddit_username']
         reddit_password = row['reddit_password']
 
+# Suppress noise about console usage from errors
+youtube_dl.utils.bug_reports_message = lambda: ''
+
+ytdl_format_options = {
+    'format': 'bestaudio/best',
+    'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
+    'restrictfilenames': True,
+    'noplaylist': True,
+    'nocheckcertificate': True,
+    'ignoreerrors': False,
+    'logtostderr': False,
+    'quiet': True,
+    'no_warnings': True,
+    'default_search': 'auto',
+    'source_address': '0.0.0.0' # bind to ipv4 since ipv6 addresses cause issues sometimes
+}
+
+ffmpeg_options = {
+    'options': '-vn'
+}
+
+ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
+
+
 bot = commands.Bot(command_prefix='/')
 
 
@@ -48,26 +73,22 @@ def update_covid_database():
     r_req = requests.get(
         'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data'
         '/csse_covid_19_time_series/time_series_covid19_recovered_global.csv')
-    c_file = open(confirmed_localization, "w")
-    d_file = open(deaths_localization, "w")
-    r_file = open(recovered_localization, "w")
-    c_file.write(c_req.text)
-    d_file.write(d_req.text)
-    r_file.write(r_req.text)
-    c_file.close()
-    d_file.close()
-    r_file.close()
+    with open(confirmed_localization, "w") as c_file:
+        c_file.write(c_req.text)
+    with open(deaths_localization, "w") as d_file:
+        d_file.write(d_req.text)
+    with open(recovered_localization, "w") as r_file:
+        r_file.write(r_req.text)
 
 
 @bot.event
 async def on_ready():
-    with open(confirmed_localization) as csv_file:
+    with open(confirmed_localization, "w") as csv_file:
         csv_reader = csv.DictReader(csv_file, delimiter=',')
         update = list(next(csv_reader).keys())[-1].split('/')
         today = date.today().strftime("%m/%d/%Y").split('/')
         if not ((int(today[1]) - int(update[1])) <= 1 and int(update[0]) == int(today[0])):
             update_covid_database()
-        csv_file.close()
 
 
 @bot.event
