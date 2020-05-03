@@ -1,5 +1,5 @@
 # bot.py
-
+import math
 import discord
 from discord.ext import commands
 import csv
@@ -14,6 +14,7 @@ import json
 
 stderr = sys.stderr
 sys.stderr = open('files/discord.log', 'w')
+LEVELS = [int(math.pow(x, 1.5)*20) for x in range(100)]
 
 # Setting up discord loggers
 logger = logging.getLogger('discord')
@@ -22,7 +23,7 @@ handler = logging.FileHandler(filename='files/discord.log', encoding='utf-8', mo
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 logger.addHandler(handler)
 
-
+    
 def open_json():
     try:
         with open("data.json", 'r') as f:
@@ -57,6 +58,9 @@ def write_json(data):
             print("Saved")
     except:
         print("Couldnt write to JSON file")
+
+
+
 # Reading variables from file
 with open("files/variables.csv", 'r') as var_csv:
     variables = csv.DictReader(var_csv, delimiter=',')
@@ -277,8 +281,17 @@ async def on_message(message):
         data=open_json()
         for user in data['people']:
             if user['userID'] == message.author.id:
-                user['xp'] += len(message.content)
+                user['xp'] += len(message.content.split(" "))
                 unique = False
+                i=0
+                pre = user['level']
+                while user['xp'] > LEVELS[i]:
+                    print(LEVELS[i])
+                    i+=1
+                user['level'] = i
+                if pre != user['level']:
+                    print("WYSLIJ WIADOMOSC")
+                    await message.channel.send(f"Congratulations {message.author.mention}, you have just hit level {user['level']}! Keep on postin' dem messages.")
             else:
                 unique = True
         if unique:
