@@ -1,5 +1,5 @@
 # bot.py
-
+import math
 import discord
 from discord.ext import commands
 import csv
@@ -16,6 +16,16 @@ import json
 
 stderr = sys.stderr
 sys.stderr = open('files/discord.log', 'w')
+LEVELS = [int(math.pow(x, 1.5)*20) for x in range(100)]
+BANNED_WORDS = (open('files/swearWords.txt','r').read().replace(" ", "").split(",") + open('files/swearWordsPL.txt','r').read().replace("'","").replace("\n","").replace(" ","").split(","))
+cursingPhrases=[
+    "Watch your mouth son!",
+    "Yo yooo chill out!",
+    "How about we take our time and try to rephrase that?",
+    "Bad words, you use - rephrase you should ~ Yoda Master",
+    "You mad bruh?",
+    "I mean, that ain't goin' through brother..."
+]
 
 # Setting up discord loggers
 logger = logging.getLogger('discord')
@@ -23,6 +33,55 @@ logger.setLevel(logging.DEBUG)
 handler = logging.FileHandler(filename='files/discord.log', encoding='utf-8', mode='w')
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 logger.addHandler(handler)
+
+    
+def open_json():
+    try:
+        with open("data.json", 'r') as f:
+            data = json.load(f)
+            print("Opened json file")
+            return data       
+    except FileNotFoundError:
+        with open("data.json", 'x') as f:
+            data = {}
+            data['people'] = []
+            data['people'].append({
+                'userID': 0,
+                'xp': 0,
+                'level' : 1
+            })
+            json.dump(data, f)
+            print("Created json file")
+            open_json()
+
+def write_json(data):
+    try:
+        print("Trying to save to file...")
+        with open("data.json", 'w') as f:
+            print(data)
+            json.dump(data, f)
+            print("Saved")
+    except:
+        print("Couldnt write to JSON file")
+
+def containsBannedWords(message):
+    print("Looking for curse words ( ͡° ͜ʖ ͡°)")
+    if not(" " in message.content):
+        print("No spaces found ( ͡° ͜ʖ ͡°)")
+        for word in BANNED_WORDS:
+            if word==message.content:
+                return True
+    else:
+        for el in message.content.split(" "):
+            print("Breaking into single words ( ͡° ͜ʖ ͡°)")
+            for word in BANNED_WORDS:
+                if el==word:
+                    print("Found banned word ( ͡° ͜ʖ ͡°)")
+                    return True
+    return False
+
+
+data=open_json()
 
 # Reading variables from file
 with open("files/variables.csv", 'r') as var_csv:
@@ -280,61 +339,53 @@ async def cov(ctx, *args):
         await ctx.send(f'date - get the last update date')
         await ctx.send(f'<country name> - type a name of country which statistics you would like to know')
 
+
+@bot.command(name='leaderboard', help='Shows the most active users.')
+async def leaderboard(ctx, *args):
+    for user in data['people']:
+        print(user)
+
 @bot.event
 async def on_message(message):
+    print("MESSAGE AUTHOR: ",  message.author)
+    print("MESSAGE AUTHOR ID: ", message.author.id)
+    print("MESSAGE CONTENT: ", message.content)
     if message.author == bot.user:
         return
     else:
-        # Tries to create a file data.json
-        try:
-            with open("data.json", 'x') as f:
-                data = {}
-                data['people'] = []
+        if not containsBannedWords(message):
+            print("not deleting message")
+            for user in data['people']:
+                if user['userID'] == message.author.id:
+                    user['xp'] += len(message.content.split(" "))
+                    unique = False
+                    i=0
+                    pre = user['level']
+                    while user['xp'] > LEVELS[i]:
+                        i+=1
+                    user['level'] = i
+                    if pre != user['level']:
+                        print("LEVELUP")
+                        await message.channel.send(
+                            f"Congratulations {message.author.mention}, you have just hit level {user['level']}!"
+                        )
+                        write_json(data)
+                else:
+                    unique = True
+            if unique:
+                print("New user entry")
                 data['people'].append({
-                    'userID': 0,
-                    'xp': 0,
+                    'userID': message.author.id,
+                    'xp': len(message.content),
                     'level' : 1
                 })
-                json.dump(data, f)
-                print("Created json file")
-        # If file exists, exception is thrown and it just gets opened
-        except:
-            with open("data.json", 'r') as f:
-                data = json.load(f)
-                print("Opened json file")
-                print(type(data))
-                print(type(data['people']))
-                print(data['people'])
-                for user in data['people']:
-                    print(user['userID'])
-                    print(type(user['userID']))
-        for user in data['people']:
-            #Checks if author Id matches to any user in the list
-            if user['userID'] == message.member.id:
-                #If so it increases the value of exp by len of message
-                user['xp'] += len(message.content)
-                #The user was on the list so it is not unique
-                unique = False
-            else:
-                #The user was not on the list so it is unique
-                unique = True
-        #If user was unique then we create a new entry on the list and also give him exp for the message
-        if unique:
-            data['people'].append({
-                'userID': message.author.id,
-                'xp': len(message.content),
-                'level' : 1
-            })
-        #Tries to save data changes to our json file.
-        try:
-            with open("data.json", 'w') as f:
-                print(data)
-                json.dump(data, f)
-        except:
-            print("Couldnt write to JSON file")
-
-
-
+                write_json(data)
+        else:
+            print("Deleting message")
+            await message.delete()
+            print("Worked?")
+            await message.channel.send(random.choice(cursingPhrases))
+    await bot.process_commands(message)
 
 
 @bot.command(name='join', help='Joins to your channel')
@@ -394,7 +445,6 @@ async def ensure_voice(ctx):
         ctx.voice_client.stop()
 
 
-@bot.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.errors.CheckFailure):
         await ctx.send('You do not have the correct role for this command.')

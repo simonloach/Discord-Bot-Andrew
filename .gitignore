@@ -1,6 +1,7 @@
 *.log
 *.csv
 *.json
+*.txt
 /venv/
 /.env
 /.gitignore
@@ -8,3 +9,4 @@
 /andrzej.py
 /test.py
 /.idea
+/mess.py
