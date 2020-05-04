@@ -336,6 +336,7 @@ async def on_message(message):
             await message.delete()
             print("Worked?")
             await message.channel.send(random.choice(cursingPhrases))
+    await bot.process_commands(message)
 @bot.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.errors.CheckFailure):
