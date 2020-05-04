@@ -52,7 +52,7 @@ def open_json():
             })
             json.dump(data, f)
             print("Created json file")
-            open_json()
+            return data
 
 def write_json(data):
     try:
@@ -75,7 +75,7 @@ def containsBannedWords(message):
                 return True
     else:
         for el in message.content.split(" "):
-            print("Breaking into single words ( ͡° ͜ʖ ͡°)")
+
             for word in BANNED_WORDS:
                 if el==word:
                     print("Found banned word ( ͡° ͜ʖ ͡°)")
@@ -367,11 +367,12 @@ async def on_message(message):
                         i+=1
                     user['level'] = i
                     if pre != user['level']:
-                        # print("LEVELUP")
+                        print("LEVELUP")
                         await message.channel.send(
                             f"Congratulations {message.author.mention}, you have just hit level {user['level']}!"
                         )
                         write_json(data)
+                    break
                 else:
                     unique = True
             if unique:

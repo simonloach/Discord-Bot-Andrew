@@ -62,6 +62,6 @@ async def on_error(event, *args, **kwargs):
         if event == 'on_message':
             f.write(f'Unhandled message: {args[0]}; {sys.exc_info()}\n')
         else:
-            raise
+            raise discord.DiscordException
 
 client.run(TOKEN)
