@@ -17,8 +17,9 @@ import json
 stderr = sys.stderr
 sys.stderr = open('files/discord.log', 'w')
 LEVELS = [int(math.pow(x, 1.5)*20) for x in range(100)]
-BANNED_WORDS = (open('files/swearWords.txt','r').read().replace(" ", "").split(",") + open('files/swearWordsPL.txt','r').read().replace("'","").replace("\n","").replace(" ","").split(","))
-cursingPhrases=[
+BANNED_WORDS = (open('files/swearWords.txt', 'r').read().replace(" ", "").split(",") +
+                open('files/swearWordsPL.txt', 'r').read().replace("'", "").replace("\n", "").replace(" ", "").split(","))
+cursingPhrases = [
     "Watch your mouth son!",
     "Yo yooo chill out!",
     "How about we take our time and try to rephrase that?",
@@ -38,50 +39,51 @@ logger.addHandler(handler)
 def open_json():
     try:
         with open("data.json", 'r') as f:
-            data = json.load(f)
+            data_ = json.load(f)
             print("Opened json file")
-            return data       
+            return data_
     except FileNotFoundError:
         with open("data.json", 'x') as f:
-            data = {}
-            data['people'] = []
-            data['people'].append({
+            data_ = {'people': []}
+            data_['people'].append({
                 'userID': 0,
                 'xp': 0,
-                'level' : 1
+                'level': 1
             })
-            json.dump(data, f)
+            json.dump(data_, f)
             print("Created json file")
             open_json()
 
-def write_json(data):
+
+def write_json(data_):
     try:
         print("Trying to save to file...")
         with open("data.json", 'w') as f:
-            print(data)
-            json.dump(data, f)
+            print(data_)
+            json.dump(data_, f)
             print("Saved")
     except:
         print("Couldnt write to JSON file")
 
-def containsBannedWords(message):
+
+def contains_banned_words(message):
     print("Looking for curse words ( ͡° ͜ʖ ͡°)")
     if not(" " in message.content):
         print("No spaces found ( ͡° ͜ʖ ͡°)")
         for word in BANNED_WORDS:
-            if word==message.content:
+            if word == message.content:
                 return True
     else:
         for el in message.content.split(" "):
             print("Breaking into single words ( ͡° ͜ʖ ͡°)")
             for word in BANNED_WORDS:
-                if el==word:
+                if el == word:
                     print("Found banned word ( ͡° ͜ʖ ͡°)")
                     return True
     return False
 
 
-data=open_json()
+data = open_json()
 
 # Reading variables from file
 with open("files/variables.csv", 'r') as var_csv:
@@ -201,7 +203,9 @@ async def kill(ctx):
 @bot.group()
 async def poll(ctx):
     if ctx.invoked_subcommand is None:
-        await ctx.send("You can use:\n ```/pool start '<question>' <1st option> <2nd option> ...\n /pool result <pool ID>```")
+        await ctx.send("You can use:\n ```/pool start '<question>' <1st option> <2nd option> ..."
+                       "\n /pool result <pool ID>```")
+
 
 @poll.command(name='start', help='Creates a simple pool, for more info say "/pool"')
 async def _start(ctx, *args):
@@ -345,6 +349,7 @@ async def leaderboard(ctx, *args):
     for user in data['people']:
         print(user)
 
+
 @bot.event
 async def on_message(message):
     print("MESSAGE AUTHOR: ",  message.author)
@@ -353,16 +358,16 @@ async def on_message(message):
     if message.author == bot.user:
         return
     else:
-        if not containsBannedWords(message):
+        if not contains_banned_words(message):
             print("not deleting message")
             for user in data['people']:
                 if user['userID'] == message.author.id:
                     user['xp'] += len(message.content.split(" "))
                     unique = False
-                    i=0
+                    i = 0
                     pre = user['level']
                     while user['xp'] > LEVELS[i]:
-                        i+=1
+                        i += 1
                     user['level'] = i
                     if pre != user['level']:
                         print("LEVELUP")
@@ -377,7 +382,7 @@ async def on_message(message):
                 data['people'].append({
                     'userID': message.author.id,
                     'xp': len(message.content),
-                    'level' : 1
+                    'level': 1
                 })
                 write_json(data)
         else:
