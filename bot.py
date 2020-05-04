@@ -349,25 +349,19 @@ async def leaderboard(ctx, *args):
 
 @bot.event
 async def on_message(message):
-    # print("MESSAGE AUTHOR: ",  message.author)
-    # print("MESSAGE AUTHOR ID: ", message.author.id)
-    # print("MESSAGE CONTENT: ", message.content)
     if message.author == bot.user:
         return
     else:
         if not containsBannedWords(message):
-            # print("not deleting message")
             for user in data['people']:
                 if user['userID'] == message.author.id:
-                    user['xp'] += len(message.content.split(" "))
                     unique = False
-                    i=0
-                    pre = user['level']
-                    while user['xp'] > LEVELS[i]:
-                        i+=1
-                    user['level'] = i
-                    if pre != user['level']:
-                        print("LEVELUP")
+                    user['xp'] += len(message.content.split(" "))
+                    level_before = user['level']
+                    for x in range(len(LEVELS)):
+                        if user['xp']>LEVELS[x]:
+                            user['level']=x+1
+                    if level_before != user['level']:
                         await message.channel.send(
                             f"Congratulations {message.author.mention}, you have just hit level {user['level']}!"
                         )
@@ -376,7 +370,6 @@ async def on_message(message):
                 else:
                     unique = True
             if unique:
-                # print("New user entry")
                 data['people'].append({
                     'userID': message.author.id,
                     'xp': len(message.content),
@@ -384,9 +377,7 @@ async def on_message(message):
                 })
                 write_json(data)
         else:
-            # print("Deleting message")
             await message.delete()
-            # print("Worked?")
             await message.channel.send(random.choice(cursingPhrases))
     await bot.process_commands(message)
 
