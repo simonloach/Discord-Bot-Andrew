@@ -9,6 +9,8 @@ import praw
 import sys
 import random
 import traceback
+import youtube_dl
+import asyncio
 from datetime import date
 import json
 
@@ -36,6 +38,51 @@ with open("files/variables.csv", 'r') as var_csv:
         reddit_username = row['reddit_username']
         reddit_password = row['reddit_password']
 
+# Suppress noise about console usage from errors
+youtube_dl.utils.bug_reports_message = lambda: ''
+
+ytdl_format_options = {
+    'format': 'bestaudio/best',
+    'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
+    'restrictfilenames': True,
+    'noplaylist': True,
+    'nocheckcertificate': True,
+    'ignoreerrors': False,
+    'logtostderr': False,
+    'quiet': True,
+    'no_warnings': True,
+    'default_search': 'auto',
+    'source_address': '0.0.0.0'   # bind to ipv4 since ipv6 addresses cause issues sometimes
+}
+
+ffmpeg_options = {'options': '-vn'}
+
+ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
+
+
+class YTDLSource(discord.PCMVolumeTransformer):
+    def __init__(self, source, *, data, volume_=0.5):
+        super().__init__(source, volume_)
+
+        self.data = data
+
+        self.title = data.get('title')
+        self.url = data.get('url')
+
+    @classmethod
+    async def from_url(cls, url, *, loop=None, stream=False):
+        print(url)
+        loop = loop or asyncio.get_event_loop()
+        data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream))
+
+        if 'entries' in data:
+            # take first item from a playlist
+            data = data['entries'][0]
+
+        filename = data['url'] if stream else ytdl.prepare_filename(data)
+        return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options), data=data)
+
+
 bot = commands.Bot(command_prefix='/')
 
 
@@ -49,26 +96,23 @@ def update_covid_database():
     r_req = requests.get(
         'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data'
         '/csse_covid_19_time_series/time_series_covid19_recovered_global.csv')
-    c_file = open(confirmed_localization, "w")
-    d_file = open(deaths_localization, "w")
-    r_file = open(recovered_localization, "w")
-    c_file.write(c_req.text)
-    d_file.write(d_req.text)
-    r_file.write(r_req.text)
-    c_file.close()
-    d_file.close()
-    r_file.close()
+    with open(confirmed_localization, "w") as c_file:
+        c_file.write(c_req.text)
+    with open(deaths_localization, "w") as d_file:
+        d_file.write(d_req.text)
+    with open(recovered_localization, "w") as r_file:
+        r_file.write(r_req.text)
 
 
 @bot.event
 async def on_ready():
-    with open(confirmed_localization) as csv_file:
+    with open(confirmed_localization, "w") as csv_file:
         csv_reader = csv.DictReader(csv_file, delimiter=',')
         update = list(next(csv_reader).keys())[-1].split('/')
         today = date.today().strftime("%m/%d/%Y").split('/')
         if not ((int(today[1]) - int(update[1])) <= 1 and int(update[0]) == int(today[0])):
             update_covid_database()
-        csv_file.close()
+    print('Logged in as {0} ({0.id})'.format(bot.user))
 
 
 @bot.event
@@ -89,7 +133,7 @@ async def create_channel(ctx, channel_name):
         await guild.create_text_channel(channel_name)
 
 
-@bot.command(name='kys', help='Closes bot, for debug purposes only')
+@bot.command(name='kys', help='Closes bot, for debug purposes only', category='asd')
 @commands.has_role('admin')
 async def kill(ctx):
     await bot.close()
@@ -134,6 +178,7 @@ async def _result(ctx, poll_id: int):
         # numbers = {':one:': 0, ':two:': 0, ':three:': 0, ':four:': 0, ':five:': 0, ':six:': 0, ':seven:': 0,
         # ':eight:': 0, ':nine:': 0}
         numbers = dict()
+        winner = discord.reaction
         for react in reactions:
             numbers[react] = react.count
             winner = react
@@ -163,8 +208,11 @@ async def meme(ctx, *args):
     else:
         subreddit = random.choice(['dankmemes', 'memes', 'funny'])
 
-    reddit = praw.Reddit(client_id=client_id, client_secret=client_secret, user_agent=user_agent,
-                         username=reddit_username, password=reddit_password)
+    reddit = praw.Reddit(client_id=client_id,
+                         client_secret=client_secret,
+                         user_agent=user_agent,
+                         username=reddit_username,
+                         password=reddit_password)
 
     try:
         submission = reddit.subreddit(subreddit).random()
@@ -287,6 +335,63 @@ async def on_message(message):
 
 
 
+
+
+@bot.command(name='join', help='Joins to your channel')
+async def join(ctx):
+    for channel in ctx.guild.voice_channels:
+        print(channel.name)
+        for member in channel.members:
+            print(member.nick)
+            if member == ctx.author:
+                if ctx.voice_client is not None:
+                    return await ctx.voice_client.move_to(channel)
+
+                await channel.connect()
+
+
+@bot.command(name='play', help='Plays music, from yt url')
+async def play(ctx, url):
+    for channel in ctx.guild.voice_channels:
+        print(channel.name)
+        for member in channel.members:
+            print(member.nick)
+            if member == ctx.author:
+                if ctx.voice_client is not None:
+                    await ctx.voice_client.move_to(channel)
+                else:
+                    await channel.connect()
+    async with ctx.typing():
+        player = await YTDLSource.from_url(url, loop=bot.loop, stream=False)
+        ctx.voice_client.play(player, after=lambda e: print('Player error: %s' % e) if e else None)
+
+    await ctx.send('Now playing: {}'.format(player.title))
+
+
+@bot.command(name='volume', help='Changes the playback volume')
+async def volume(ctx, volume_: int):
+    if ctx.voice_client is None:
+        return await ctx.send("Not connected to a voice channel.")
+
+    ctx.voice_client.source.volume = volume_ / 100
+    await ctx.send("Changed volume to {}%".format(volume_))
+
+
+@bot.command(name='stop', help='Stop the player, and leaves the channel')
+async def stop(ctx):
+    await ctx.voice_client.disconnect()
+
+
+@play.before_invoke
+async def ensure_voice(ctx):
+    if ctx.voice_client is None:
+        if ctx.author.voice:
+            await ctx.author.voice.channel.connect()
+        else:
+            await ctx.send("You are not connected to a voice channel.")
+            raise commands.CommandError("Author not connected to a voice channel.")
+    elif ctx.voice_client.is_playing():
+        ctx.voice_client.stop()
 
 
 @bot.event
