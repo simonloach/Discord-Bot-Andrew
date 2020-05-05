@@ -2,8 +2,9 @@ import json
 
 import requests
 
-from bot import BANNED_WORDS
-
+BANNED_WORDS = (open('files/swearWords.txt', 'r').read().replace(" ", "").split(",") +
+                open('files/swearWordsPL.txt', 'r').read().replace("'", "").replace("\n", "").replace(" ", "").split(
+                    ","))
 
 def update_covid_database(confirmed_localization, deaths_localization, recovered_localization):
     c_req = requests.get(

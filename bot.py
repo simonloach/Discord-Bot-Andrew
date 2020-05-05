@@ -11,6 +11,7 @@ import traceback
 import youtube_dl
 import asyncio
 
+from operator import itemgetter
 from functions import update_covid_database, write_json, contains_banned_words, open_json
 
 stderr = sys.stderr
@@ -131,8 +132,8 @@ async def kill(ctx):
 @bot.group()
 async def poll(ctx):
     if ctx.invoked_subcommand is None:
-        await ctx.send("You can use:\n ```/pool start '<question>' "
-                       "<1st option> <2nd option> ...\n /pool result <pool ID>```")
+        await ctx.send(" You can use:\n ```/poll start '<question>' "
+                       "<1st option> <2nd option> ...\n /poll result <pool ID>```")
 
 
 @poll.command(name='start', help='Creates a simple pool, for more info say "/pool"')
@@ -275,8 +276,21 @@ async def cov(ctx, *args):
 
 @bot.command(name='leaderboard', help='Shows the most active users.')
 async def leaderboard(ctx, *args):
+    leaderboard=[]
+
+    print("startuje leaderboard")
     for user in DATA['people']:
-        print(user)
+        leaderboard.append([user['level'],user['userID']])
+        print(leaderboard)
+    print(leaderboard.sort(reverse=True))
+    print(leaderboard)
+    string = "List of the most active users:\n"
+    counter = 1
+    for x in range(len(leaderboard)-1):
+        string += (f"{counter}. Level {leaderboard[x][0]} {(bot.get_user(leaderboard[x][1])).mention}\n")
+        counter+=1
+    await ctx.send(string)
+        
 
 
 @bot.event
