@@ -4,21 +4,24 @@ import discord
 from discord.ext import commands
 import csv
 import logging
-import requests
 import praw
 import sys
 import random
 import traceback
 import youtube_dl
 import asyncio
-from datetime import date
-import json
+
+from functions import update_covid_database, write_json, contains_banned_words, open_json
 
 stderr = sys.stderr
 sys.stderr = open('files/discord.log', 'w')
-LEVELS = [int(math.pow(x, 1.5)*20) for x in range(100)]
-BANNED_WORDS = (open('files/swearWords.txt','r').read().replace(" ", "").split(",") + open('files/swearWordsPL.txt','r').read().replace("'","").replace("\n","").replace(" ","").split(","))
-cursingPhrases=[
+
+DATA = open_json()
+LEVELS = [int(math.pow(x, 1.5) * 20) for x in range(100)]
+BANNED_WORDS = (open('files/swearWords.txt', 'r').read().replace(" ", "").split(",") +
+                open('files/swearWordsPL.txt', 'r').read().replace("'", "").replace("\n", "").replace(" ", "").split(
+                    ","))
+CURSE_PHRASES = [
     "Watch your mouth son!",
     "Yo yooo chill out!",
     "How about we take our time and try to rephrase that?",
@@ -33,57 +36,6 @@ logger.setLevel(logging.DEBUG)
 handler = logging.FileHandler(filename='files/discord.log', encoding='utf-8', mode='w')
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 logger.addHandler(handler)
-
-    
-def open_json():
-    try:
-        with open("data.json", 'r') as f:
-            data = json.load(f)
-            print("Opened json file")
-            return data       
-    except FileNotFoundError:
-        with open("data.json", 'x') as f:
-            data = {}
-            data['people'] = []
-            data['people'].append({
-                'userID': 0,
-                'xp': 0,
-                'level' : 1
-            })
-            json.dump(data, f)
-            print("Created json file")
-            return data
-
-def write_json(data):
-    try:
-        print("Trying to save to file...")
-        with open("data.json", 'w') as f:
-            print(data)
-            json.dump(data, f)
-            print("Saved")
-    except:
-        print("Couldnt write to JSON file")
-
-def containsBannedWords(message):
-    print("Looking for curse words ( ͡° ͜ʖ ͡°)")
-    if len(message.content)==0:
-        return False
-    if not(" " in message.content):
-        print("No spaces found ( ͡° ͜ʖ ͡°)")
-        for word in BANNED_WORDS:
-            if word==message.content:
-                return True
-    else:
-        for el in message.content.split(" "):
-
-            for word in BANNED_WORDS:
-                if el==word:
-                    print("Found banned word ( ͡° ͜ʖ ͡°)")
-                    return True
-    return False
-
-
-data=open_json()
 
 # Reading variables from file
 with open("files/variables.csv", 'r') as var_csv:
@@ -113,7 +65,7 @@ ytdl_format_options = {
     'quiet': True,
     'no_warnings': True,
     'default_search': 'auto',
-    'source_address': '0.0.0.0'   # bind to ipv4 since ipv6 addresses cause issues sometimes
+    'source_address': '0.0.0.0'  # bind to ipv4 since ipv6 addresses cause issues sometimes
 }
 
 ffmpeg_options = {'options': '-vn'}
@@ -147,32 +99,8 @@ class YTDLSource(discord.PCMVolumeTransformer):
 bot = commands.Bot(command_prefix='/')
 
 
-def update_covid_database():
-    c_req = requests.get(
-        'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data'
-        '/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
-    d_req = requests.get(
-        'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data'
-        '/csse_covid_19_time_series/time_series_covid19_deaths_global.csv')
-    r_req = requests.get(
-        'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data'
-        '/csse_covid_19_time_series/time_series_covid19_recovered_global.csv')
-    with open(confirmed_localization, "w") as c_file:
-        c_file.write(c_req.text)
-    with open(deaths_localization, "w") as d_file:
-        d_file.write(d_req.text)
-    with open(recovered_localization, "w") as r_file:
-        r_file.write(r_req.text)
-
-
 @bot.event
 async def on_ready():
-    with open(confirmed_localization, "w") as csv_file:
-        csv_reader = csv.DictReader(csv_file, delimiter=',')
-        update = list(next(csv_reader).keys())[-1].split('/')
-        today = date.today().strftime("%m/%d/%Y").split('/')
-        if not ((int(today[1]) - int(update[1])) <= 1 and int(update[0]) == int(today[0])):
-            update_covid_database()
     print('Logged in as {0} ({0.id})'.format(bot.user))
 
 
@@ -203,7 +131,9 @@ async def kill(ctx):
 @bot.group()
 async def poll(ctx):
     if ctx.invoked_subcommand is None:
-        await ctx.send("You can use:\n ```/pool start '<question>' <1st option> <2nd option> ...\n /pool result <pool ID>```")
+        await ctx.send("You can use:\n ```/pool start '<question>' "
+                       "<1st option> <2nd option> ...\n /pool result <pool ID>```")
+
 
 @poll.command(name='start', help='Creates a simple pool, for more info say "/pool"')
 async def _start(ctx, *args):
@@ -291,6 +221,7 @@ async def meme(ctx, *args):
 @bot.command(name='cov', help='Shows how many COVID-19 cases there are now in given country')
 async def cov(ctx, *args):
     if len(args) > 0:
+        print(args)
         country = args[0]
         localization = confirmed_localization
         date_read = False
@@ -319,7 +250,7 @@ async def cov(ctx, *args):
                 await ctx.send(f'Last update: {update}')
                 success = True
             if country == "update":
-                update_covid_database()
+                update_covid_database(confirmed_localization, deaths_localization, recovered_localization)
                 await ctx.send(f'Update completed')
                 success = True
             else:
@@ -337,48 +268,49 @@ async def cov(ctx, *args):
                 await ctx.send(f'Something went wrong')
 
     else:
-        await ctx.send(f'Usage:')
-        await ctx.send(f'date - get the last update date')
-        await ctx.send(f'<country name> - type a name of country which statistics you would like to know')
+        await ctx.send(f'``` Usage:\n '
+                       f'date - get the last update date \n '
+                       f'<country name> - type a name of country which statistics you would like to know```')
 
 
 @bot.command(name='leaderboard', help='Shows the most active users.')
 async def leaderboard(ctx, *args):
-    for user in data['people']:
+    for user in DATA['people']:
         print(user)
+
 
 @bot.event
 async def on_message(message):
     if message.author == bot.user:
         return
     else:
-        if not containsBannedWords(message):
-            for user in data['people']:
+        if not contains_banned_words(message):
+            for user in DATA['people']:
                 if user['userID'] == message.author.id:
                     unique = False
                     user['xp'] += len(message.content.split(" "))
                     level_before = user['level']
                     for x in range(len(LEVELS)):
-                        if user['xp']>LEVELS[x]:
-                            user['level']=x+1
+                        if user['xp'] > LEVELS[x]:
+                            user['level'] = x + 1
                     if level_before != user['level']:
                         await message.channel.send(
                             f"Congratulations {message.author.mention}, you have just hit level {user['level']}!"
                         )
-                        write_json(data)
+                        write_json(DATA)
                     break
                 else:
                     unique = True
             if unique:
-                data['people'].append({
+                DATA['people'].append({
                     'userID': message.author.id,
                     'xp': len(message.content),
-                    'level' : 1
+                    'level': 1
                 })
-                write_json(data)
+                write_json(DATA)
         else:
             await message.delete()
-            await message.channel.send(random.choice(cursingPhrases))
+            await message.channel.send(random.choice(CURSE_PHRASES))
     await bot.process_commands(message)
 
 
