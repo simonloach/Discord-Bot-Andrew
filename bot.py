@@ -19,7 +19,7 @@ sys.stderr = open('files/discord.log', 'w')
 
 DATA = open_json()
 LEVELS = [int(math.pow(x, 1.5) * 20) for x in range(100)]
-BANNED_WORDS = (open('files/swearWords.txt', 'r').read().replace(" ", "").split(",") +
+BANNED_WORDS = (#open('files/swearWords.txt', 'r').read().replace(" ", "").split(",") +
                 open('files/swearWordsPL.txt', 'r').read().replace("'", "").replace("\n", "").replace(" ", "").split(
                     ","))
 CURSE_PHRASES = [
@@ -208,9 +208,9 @@ async def meme(ctx, *args):
 
     try:
         submission = reddit.subreddit(subreddit).random()
-        await ctx.send(submission.title)
+        await ctx.send(f"Meme to cheer you up m8\n```{submission.title}```")
         if submission.is_self:
-            await ctx.send(submission.selftext)
+            await ctx.send(f"Meme to cheer you up m8:\n```{submission.selftext}```")
         else:
             await ctx.send(submission.url)
     except:
@@ -298,7 +298,9 @@ async def on_message(message):
     if message.author == bot.user:
         return
     else:
-        if not contains_banned_words(message):
+        print(f"User {message.author} said in channel {message.channel}: {message.content}", end="")
+        if not contains_banned_words(message, BANNED_WORDS):
+            print(" OK! No banned words found")
             for user in DATA['people']:
                 if user['userID'] == message.author.id:
                     unique = False
@@ -323,6 +325,7 @@ async def on_message(message):
                 })
                 write_json(DATA)
         else:
+            print(" NOT OK! Curse word found, deleting the message")
             await message.delete()
             await message.channel.send(random.choice(CURSE_PHRASES))
     await bot.process_commands(message)
@@ -356,7 +359,7 @@ async def play(ctx, url):
         player = await YTDLSource.from_url(url, loop=bot.loop, stream=False)
         ctx.voice_client.play(player, after=lambda e: print('Player error: %s' % e) if e else None)
 
-    await ctx.send('Now playing: {}'.format(player.title))
+    await ctx.send('Now playing: \n```{}```\n ┏(･o･)┛♪┗ (･o･) ┓ Put your hands up in the air ┏(･o･)┛♪┗ (･o･) ┓'.format(player.title))
 
 
 @bot.command(name='volume', help='Changes the playback volume')
