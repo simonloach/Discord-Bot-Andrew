@@ -29,12 +29,14 @@ async def on_ready():
     members = '\n - '.join([member.name for member in guild.members])
     print(f'Guild Members:\n - {members}')
 
+
 @client.event
 async def on_member_join(member):
     await member.create_dm()
     await member.dm_channel.send(
         f'Hi {member.name}, welcome to my Discord server!'
     )
+
 
 @client.event
 async def on_message(message):
@@ -55,6 +57,7 @@ async def on_message(message):
         await message.channel.send(response)
     elif message.content == 'raise-exception':
         raise discord.DiscordException
+
 
 @client.event
 async def on_error(event, *args, **kwargs):

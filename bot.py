@@ -288,10 +288,9 @@ async def leaderboard(ctx, *args):
     counter = 1
     for x in range(len(leaderboard)-1):
         string += (f"{counter}. Level {leaderboard[x][0]} {(bot.get_user(leaderboard[x][1])).mention}\n")
-        counter+=1
+        counter += 1
     await ctx.send(string)
         
-
 
 @bot.event
 async def on_message(message):

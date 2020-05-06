@@ -1,10 +1,10 @@
 import json
-
 import requests
 
 BANNED_WORDS = (open('files/swearWords.txt', 'r').read().replace(" ", "").split(",") +
                 open('files/swearWordsPL.txt', 'r').read().replace("'", "").replace("\n", "").replace(" ", "").split(
                     ","))
+
 
 def update_covid_database(confirmed_localization, deaths_localization, recovered_localization):
     c_req = requests.get(
@@ -27,7 +27,7 @@ def update_covid_database(confirmed_localization, deaths_localization, recovered
 def write_json(data):
     try:
         print("Trying to save to file...")
-        with open("data.json", 'w') as f:
+        with open("files/data.json", 'w') as f:
             print(data)
             json.dump(data, f)
             print("Saved")
@@ -56,12 +56,12 @@ def contains_banned_words(message):
 
 def open_json():
     try:
-        with open("data.json", 'r') as f:
+        with open("files/data.json", 'r') as f:
             data = json.load(f)
             print("Opened json file")
             return data
     except FileNotFoundError:
-        with open("data.json", 'x') as f:
+        with open("files/data.json", 'x') as f:
             data = {'people': []}
             data['people'].append({
                 'userID': 0,
