@@ -2,7 +2,6 @@ import json
 import requests
 
 
-
 def update_covid_database(confirmed_localization, deaths_localization, recovered_localization):
     c_req = requests.get(
         'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data'
@@ -33,17 +32,17 @@ def write_json(data):
 
 
 def contains_banned_words(message, lista):
-    if len(message.content)==0:
+    if len(message.content) == 0:
         return False
     if not(" " in message.content):
         for word in lista:
-            if word==message.content:
+            if word == message.content:
                 return True
     else:
         for el in message.content.split(" "):
 
             for word in lista:
-                if el==word:
+                if el == word:
                     return True
     return False
 
@@ -60,7 +59,7 @@ def open_json():
             data['people'].append({
                 'userID': 0,
                 'xp': 0,
-                'level' : 1
+                'level': 1
             })
             json.dump(data, f)
             print("Created json file")
