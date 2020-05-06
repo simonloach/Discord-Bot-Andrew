@@ -1,9 +1,6 @@
 import json
 import requests
 
-BANNED_WORDS = (open('files/swearWords.txt', 'r').read().replace(" ", "").split(",") +
-                open('files/swearWordsPL.txt', 'r').read().replace("'", "").replace("\n", "").replace(" ", "").split(
-                    ","))
 
 
 def update_covid_database(confirmed_localization, deaths_localization, recovered_localization):
@@ -35,21 +32,18 @@ def write_json(data):
         print("Couldnt write to JSON file")
 
 
-def contains_banned_words(message):
-    print("Looking for curse words ( ͡° ͜ʖ ͡°)")
+def contains_banned_words(message, lista):
     if len(message.content)==0:
         return False
     if not(" " in message.content):
-        print("No spaces found ( ͡° ͜ʖ ͡°)")
-        for word in BANNED_WORDS:
+        for word in lista:
             if word==message.content:
                 return True
     else:
         for el in message.content.split(" "):
 
-            for word in BANNED_WORDS:
+            for word in lista:
                 if el==word:
-                    print("Found banned word ( ͡° ͜ʖ ͡°)")
                     return True
     return False
 
